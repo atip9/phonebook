@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vue Authentication</title>
+</head>
+<body>
+
+<div id="app">
+  <router-link to="/register">Register</router-link> |
+  <router-link to="/login">Login</router-link>
+  <router-view></router-view>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/vue-router@3"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+<script>
+  // Define components
+  const Register = {
+    template: `
+      <div>
+        <h2>Register</h2>
+        <form @submit.prevent="register">
+          <label>Email:</label>
+          <input v-model="email" type="email" required />
+          <br />
+          <label>Password:</label>
+          <input v-model="password" type="password" required />
+          <br />
+          <button type="submit">Register</button>
+        </form>
+      </div>
+    `,
+    data() {
+      return {
+        email: '',
+        password: '',
+      };
+    },
+    methods: {
+      async register() {
+        try {
+          const response = await axios.post('http://localhost:3001/api/register', {
+            email: this.email,
+            password: this.password,
+          });
+          console.log(response.data);
+        } catch (error) {
+          console.error(error.response.data);
+        }
+      },
+    },
+  };
+
+  const Login = {
+    template: `
+      <div>
+        <h2>Login</h2>
+        <form @submit.prevent="login">
+          <label>Email:</label>
+          <input v-model="email" type="email" required />
+          <br />
+          <label>Password:</label>
+          <input v-model="password" type="password" required />
+          <br />
+          <button type="submit">Login</button>
+        </form>
+      </div>
+    `,
+    data() {
+      return {
+        email: '',
+        password: '',
+      };
+    },
+    methods: {
+      async login() {
+        try {
+          const response = await axios.post('http://localhost:3001/api/login', {
+            email: this.email,
+            password: this.password,
+          });
+          console.log(response.data);
+          // Store the token in localStorage or Vuex for future requests
+        } catch (error) {
+          console.error(error.response.data);
+        }
+      },
+    },
+  };
+
+  // Set up Vue Router
+  const routes = [
+    { path: '/register', component: Register },
+    { path: '/login', component: Login },
+  ];
+
+  const router = new VueRouter({
+    routes,
+  });
+
+  // Create and mount the root Vue instance
+  new Vue({
+    el: '#app',
+    router,
+    template: `
+      <div>
+        <router-link to="/register">Register</router-link> |
+        <router-link to="/login">Login</router-link>
+        <router-view></router-view>
+      </div>
+    `,
+  });
+</script>
+
+</body>
+</html>

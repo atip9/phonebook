@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Contact List Manager</title>
+    <script src="https://unpkg.com/vue@3"></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.4/axios.min.js"
+      integrity="sha512-ANd7ZJmixP2T0hxOP4bS6hkci01fxyrQSyRdaY7IsWq1WlKsD0WwWBDVDZbnMR7CJZVKCTkDx/q5D5n2C2C+vg=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+      }
+
+      header {
+        background-color: #333;
+        color: #fff;
+        padding: 1em;
+        text-align: center;
+      }
+
+      #contact-form {
+        max-width: 400px;
+        margin: 20px auto;
+        padding: 20px;
+        background-color: #fff;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        border-radius: 5px;
+      }
+
+      #contact-list {
+        max-width: 600px;
+        margin: 20px auto;
+        padding: 20px;
+        background-color: #fff;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        border-radius: 5px;
+      }
+
+      ul {
+        list-style-type: none;
+        padding: 0;
+      }
+
+      li {
+        margin-bottom: 10px;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        display: flex;
+        justify-content: space-between;
+      }
+
+      button {
+        background-color: #333;
+        color: #fff;
+        border: none;
+        padding: 8px 12px;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background-color: #555;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <div v-if="loggedInAs">
+        <header>
+          <h1>Contact List Manager</h1>
+        </header>
+
+        <div id="contact-form">
+          <h2>Add Contact</h2>
+          Welcome : {{loggedInAs}}
+          <br /><br />
+          <form @submit.prevent="addContact">
+            <label for="name">Name:</label>
+            <input v-model="newContact.name" type="text" id="name" required />
+            <br />
+            <label for="name">Email:</label>
+            <input v-model="newContact.email" type="email" id="email" required/>
+            <br />
+            <label for="name">Mobile:</label>
+            <input v-model="newContact.Mobile" type="text" id="Mobile" />
+            <br />
+            <label for="name">Facebook:</label>
+            <input v-model="newContact.facebook" type="text" id="facebook" />
+            <br />
+            <label for="name">Twitter:</label>
+            <input v-model="newContact.Twitter" type="text" id="Twitter" />
+            <br />
+            <label for="name">Instagram:</label>
+            <input v-model="newContact.Instagram" type="text" id="Instagram" />
+            <!-- <br />
+            <label for="email">Email:</label>
+            <input v-model="newContact.email" type="email" id="email"   required /> -->
+            <button type="submit">Add Contact</button>
+          </form>
+      //    <button @click="loadFromDB">loadFromDB</button>
+        </div>
+
+        <div id="contact-list">
+          <h2>Contact List</h2>
+          <ul>
+            <li v-for="(contact, index) in contacts" :key="index">
+              Name: {{ contact.name }}
+              <br />
+              Email: {{ contact.email }}
+              <br />
+              Mobile: {{ contact.Mobile }}
+              <br />
+              Facebook: {{ contact.facebook }}
+              <br />
+              Twitter: {{ contact.Twitter }}
+              <br />
+              Instagram: {{ contact.Instagram }}
+
+              <button @click="removeContact(index)">Remove</button>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div v-else>
+        <div>
+          <h2>Register</h2>
+          <form @submit.prevent="register">
+            <label>Email:</label>
+            <input v-model="register_form.email" type="email" required />
+            <br />
+            <label>Password:</label>
+            <input v-model="register_form.password" type="password" required />
+            <br />
+            <button type="submit">Register</button>
+          </form>
+        </div>
+
+        <div>
+          <h2>Login</h2>
+          <form @submit.prevent="login">
+            <label>Email:</label>
+            <input v-model="login_form.email" type="email" required />
+            <br />
+            <label>Password:</label>
+            <input v-model="login_form.password" type="password" required />
+            <br />
+            <button type="submit">Login</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const app = Vue.createApp({
+        data() {
+          return {
+            // من هنا
+            newContact: { name: "", email: "",Mobile: "", facebook: "",Twitter: "",Instagram: "", owner: null },
+            contacts: [],
+            login_form: { email: "", password: "" },
+            register_form: { email: "", password: "" },
+            loggedInAs: null,
+          };
+        },
+        methods: {
+          addContact() {
+            if (this.newContact.name && this.newContact.email) {
+              this.contacts.push({ ...this.newContact });
+              axios.post("http://localhost:3001/contacts/", this.newContact);
+              this.newContact.name = "";
+              this.newContact.email = "";
+            }
+          },
+          removeContact(index) {
+            let id = this.contacts[index]._id;
+            axios.delete("http://localhost:3001/contacts/" + id);
+
+            this.contacts.splice(index, 1);
+          },
+          loadFromDB() {
+            axios("http://localhost:3001/contacts/" + this.loggedInAs).then(
+              (r) => {
+                this.contacts = r.data;
+              }
+            );
+          },
+          async login() {
+            try {
+              const response = await axios.post(
+                "http://localhost:3001/api/login",
+                {
+                  email: this.login_form.email,
+                  password: this.login_form.password,
+                }
+              );
+              console.log(response.data);
+              if (response.data.message) alert(response.data.message);
+              if (response.data.error) alert(response.data.error);
+
+              if (response.data.token) {
+                this.loggedInAs = this.login_form.email;
+                this.newContact.owner = this.loggedInAs;
+                this.loadFromDB();
+              }
+              // Store the token in localStorage or Vuex for future requests
+            } catch (error) {
+              alert(error.response.data.error);
+              console.error(error.response.data);
+            }
+          },
+          async register() {
+            try {
+              const response = await axios.post(
+                "http://localhost:3001/api/register",
+                {
+                  email: this.register_form.email,
+                  password: this.register_form.password,
+                }
+              );
+              console.log(response.data);
+              if (response.data.message) alert(response.data.message);
+              if (response.data.error) alert(response.data.error);
+            } catch (error) {
+              alert(error.response.data.error);
+              console.error(error.response.data);
+            }
+          },
+        },
+        mounted() {},
+      });
+
+      app.mount("#app");
+    </script>
+  </body>
+</html>
