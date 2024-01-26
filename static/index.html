@@ -11,65 +11,7 @@
       crossorigin="anonymous"
       referrerpolicy="no-referrer"
     ></script>
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        margin: 0;
-        padding: 0;
-        background-color: #f4f4f4;
-      }
-
-      header {
-        background-color: #333;
-        color: #fff;
-        padding: 1em;
-        text-align: center;
-      }
-
-      #contact-form {
-        max-width: 400px;
-        margin: 20px auto;
-        padding: 20px;
-        background-color: #fff;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        border-radius: 5px;
-      }
-
-      #contact-list {
-        max-width: 600px;
-        margin: 20px auto;
-        padding: 20px;
-        background-color: #fff;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        border-radius: 5px;
-      }
-
-      ul {
-        list-style-type: none;
-        padding: 0;
-      }
-
-      li {
-        margin-bottom: 10px;
-        padding: 10px;
-        border: 1px solid #ddd;
-        border-radius: 5px;
-        display: flex;
-        justify-content: space-between;
-      }
-
-      button {
-        background-color: #333;
-        color: #fff;
-        border: none;
-        padding: 8px 12px;
-        cursor: pointer;
-      }
-
-      button:hover {
-        background-color: #555;
-      }
-    </style>
+<link rel="stylesheet" href="style.css">
   </head>
   <body>
     <div id="app">
@@ -79,7 +21,10 @@
         </header>
 
         <div id="contact-form">
-          <h2>Add Contact</h2>
+          <h2>
+            <span v-if="newContact._id">Edit</span>
+            <span v-else>New</span>
+             Contact</h2>
           Welcome : {{loggedInAs}}
           <br /><br />
           <form @submit.prevent="addContact">
@@ -103,12 +48,15 @@
             <!-- <br />
             <label for="email">Email:</label>
             <input v-model="newContact.email" type="email" id="email"   required /> -->
-            <button type="submit">Add Contact</button>
+            <br>
+            <button v-if="newContact._id" type="submit">Edit Contact</button>
+            <button v-else type="submit">Add Contact</button>
+            <button @click="revert">Cancel</button>
           </form>
-      //    <button @click="loadFromDB">loadFromDB</button>
+    
         </div>
 
-        <div id="contact-list">
+        <div v-if="false" id="contact-list">
           <h2>Contact List</h2>
           <ul>
             <li v-for="(contact, index) in contacts" :key="index">
@@ -128,6 +76,48 @@
             </li>
           </ul>
         </div>
+
+        <label>Search:
+        <input type="text" placeholder="Search here..." v-model="search">
+</label>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Mobile</th>
+              <th>Facebook</th>
+              <th>Twitter</th>
+              <th>Instagram</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          
+          <tbody>
+            <tr
+              v-for="(contact, i) in filteredItems"
+              :key="i">
+              <td>
+              {{ contact.name }}
+              </td><td>
+              {{ contact.email }}
+            </td><td>
+              {{ contact.Mobile }}
+            </td><td>
+              {{ contact.facebook }}
+            </td><td>
+              {{ contact.Twitter }}
+            </td><td>
+             {{ contact.Instagram }}
+            </td><td>
+              <button @click="removeContact(i)">Remove</button>
+              <button @click="edit_contact_clicked(contact)">Edit</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+
       </div>
       <div v-else>
         <div>
@@ -163,27 +153,47 @@
         data() {
           return {
             // من هنا
-            newContact: { name: "", email: "",Mobile: "", facebook: "",Twitter: "",Instagram: "", owner: null },
+            newContact: { _id:null, name: "", email: "",Mobile: "", facebook: "",Twitter: "",Instagram: "", owner: null },
             contacts: [],
-            login_form: { email: "", password: "" },
+            login_form: { email: "sami@sami.com", password: "123" },
             register_form: { email: "", password: "" },
             loggedInAs: null,
+
+            // Searchable table
+            search: '',
+
           };
         },
         methods: {
           addContact() {
+            if(this.newContact._id) { // Edit
+              axios.put("http://localhost:3001/contacts/"+this.newContact._id, this.newContact).then(r=> {
+               revert();
+                loadFromDB()
+              })
+
+            }else { // New
             if (this.newContact.name && this.newContact.email) {
               this.contacts.push({ ...this.newContact });
               axios.post("http://localhost:3001/contacts/", this.newContact);
               this.newContact.name = "";
               this.newContact.email = "";
             }
+          }
+
+          },
+          revert() {
+            this.newContact = { _id:null, name: "", email: "",Mobile: "", facebook: "",Twitter: "",Instagram: "", owner: null }
+
           },
           removeContact(index) {
             let id = this.contacts[index]._id;
             axios.delete("http://localhost:3001/contacts/" + id);
 
             this.contacts.splice(index, 1);
+          },
+          edit_contact_clicked(obj) {
+            this.newContact = obj
           },
           loadFromDB() {
             axios("http://localhost:3001/contacts/" + this.loggedInAs).then(
@@ -234,7 +244,19 @@
             }
           },
         },
-        mounted() {},
+        computed: {
+    filteredItems () {
+      return this.contacts.filter(item => {
+         return item.name.toLowerCase().indexOf(this.search.toLowerCase()) > -1 ||
+         item.Mobile.toLowerCase().indexOf(this.search.toLowerCase()) > -1
+      })
+    }
+  },
+        mounted() {
+
+
+
+        },
       });
 
       app.mount("#app");
